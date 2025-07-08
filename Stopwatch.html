@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Galaxy Stopwatch</title>
+<style>
+  /* ----------  GLOBAL  ---------- */
+  :root{
+    --dial-size: 420px;
+    --dial-border: 12px;
+    --accent: #00eaff;
+    --accent-secondary: #ff6b6b;
+    --accent-tertiary: #4ecdc4;
+    --accent-quaternary: #ffd700;
+    --glass: rgba(255,255,255,.08);
+    --glass-hover: rgba(255,255,255,.15);
+    --dark-glass: rgba(0,0,0,.3);
+  }
+  
+  *{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    font-family:"Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    color:#fff;
+  }
+  
+  body{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(0,255,255,.2) 0%, transparent 50%),
+      radial-gradient(circle at 85% 25%, rgba(255,0,255,.15) 0%, transparent 45%),
+      radial-gradient(circle at 65% 85%, rgba(0,255,128,.12) 0%, transparent 40%),
+      radial-gradient(circle at 35% 65%, rgba(255,215,0,.1) 0%, transparent 35%),
+      linear-gradient(135deg, #0a1828, #1e3a5f 30%, #2c5364 60%, #1a3a4a 90%);
+    overflow:hidden;
+    position:relative;
+    padding: 20px;
+  }
+  
+  /* Enhanced animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      radial-gradient(3px 3px at 25px 35px, rgba(255,255,255,.15), transparent),
+      radial-gradient(2px 2px at 55px 85px, rgba(0,255,255,.12), transparent),
+      radial-gradient(1px 1px at 95px 45px, rgba(255,0,255,.1), transparent),
+      radial-gradient(2px 2px at 145px 95px, rgba(255,215,0,.1), transparent),
+      radial-gradient(1px 1px at 185px 25px, rgba(0,255,128,.08), transparent);
+    background-repeat: repeat;
+    background-size: 250px 150px;
+    animation: sparkle 25s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,.1) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+  
+  @keyframes sparkle {
+    0% { transform: translateY(0px) translateX(0px); }
+    25% { transform: translateY(-50px) translateX(20px); }
+    50% { transform: translateY(-100px) translateX(0px); }
+    75% { transform: translateY(-150px) translateX(-20px); }
+    100% { transform: translateY(-200px) translateX(0px); }
+  }
+  
+  .container {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  
+  h1{
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px rgba(0,234,255,.6);
+    background: linear-gradient(45deg, #00eaff, #ff6b6b, #4ecdc4, #ffd700);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 4s ease-in-out infinite, textGlow 3s ease-in-out infinite alternate;
+    user-select: none;
+  }
+  
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  @keyframes textGlow {
+    0% { text-shadow: 0 0 20px rgba(0,234,255,.6); }
+    100% { text-shadow: 0 0 35px rgba(0,234,255,.9), 0 0 50px rgba(255,107,107,.4); }
+  }
+  
+  /* ----------  WATCH CONTAINER  ---------- */
+  .watch-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+  }
+  
+  /* ----------  WATCH DIAL  ---------- */
+  .watch{
+    position:relative;
+    width:var(--dial-size);
+    height:var(--dial-size);
+    border-radius:50%;
+    padding:var(--dial-border);
+    background:linear-gradient(145deg, #4a5568, #2d3748, #1a202c);
+    box-shadow:
+      0 0 40px rgba(0,0,0,.9),
+      0 0 80px rgba(0,234,255,.15),
+      inset 0 0 50px rgba(0,0,0,.8),
+      inset 0 0 100px rgba(0,234,255,.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    animation: watchPulse 5s ease-in-out infinite;
+    transition: all .3s ease;
+  }
+  
+  .watch:hover {
+    transform: scale(1.02);
+    box-shadow:
+      0 0 50px rgba(0,0,0,.9),
+      0 0 100px rgba(0,234,255,.2),
+      inset 0 0 50px rgba(0,0,0,.8),
+      inset 0 0 100px rgba(0,234,255,.12);
+  }
+  
+  @keyframes watchPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.01); }
+  }
+  
+  /* Enhanced rotating ticks */
+  .watch::before{
+    content:"";
+    position:absolute;
+    inset:calc(var(--dial-border) + 18px);
+    border-radius:50%;
+    pointer-events:none;
+    background:
+      repeating-conic-gradient(
+        from 0deg,
+        var(--accent) 0deg 2deg,
+        transparent 2deg 8deg,
+        var(--accent-secondary) 8deg 10deg,
+        transparent 10deg 16deg,
+        var(--accent-tertiary) 16deg 18deg,
+        transparent 18deg 24deg,
+        var(--accent-quaternary) 24deg 26deg,
+        transparent 26deg 30deg
+      );
+    mask:radial-gradient(farthest-side, transparent calc(100% - 6px), #000 0);
+    opacity:.8;
+    animation: rotateTicks 60s linear infinite;
+  }
+  
+  @keyframes rotateTicks {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Hour markers */
+  .watch::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--dial-border) + 22px);
+    border-radius: 50%;
+    background: repeating-conic-gradient(
+      from 0deg,
+      var(--accent) 0deg 4deg,
+      transparent 4deg 90deg
+    );
+    mask: radial-gradient(farthest-side, transparent calc(100% - 10px), #000 calc(100% - 10px), #000 calc(100% - 4px), transparent calc(100% - 4px));
+    opacity: .9;
+  }
+  
+  /* Inner glass face */
+  .dial{
+    position:relative;
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:var(--glass);
+    backdrop-filter:blur(10px);
+    box-shadow:
+      inset 0 0 50px rgba(0,0,0,.7),
+      inset 0 0 100px rgba(0,234,255,.08);
+    border: 2px solid rgba(255,255,255,.12);
+  }
+  
+  .display{
+    font-size: 3.2rem;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 
+      0 0 15px var(--accent),
+      0 0 30px var(--accent),
+      0 0 45px rgba(0,234,255,.4);
+    margin-bottom: 25px;
+    font-family: 'Courier New', 'Monaco', monospace;
+    letter-spacing: 3px;
+    text-align: center;
+    animation: digitalGlow 2.5s ease-in-out infinite alternate;
+    user-select: none;
+    transition: all .3s ease;
+  }
+  
+  @keyframes digitalGlow {
+    0% { text-shadow: 0 0 15px var(--accent), 0 0 30px var(--accent); }
+    100% { text-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent), 0 0 60px rgba(0,234,255,.6); }
+  }
+  
+  .status {
+    font-size: 1rem;
+    color: #888;
+    margin-top: -10px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+    transition: all .3s ease;
+  }
+  
+  .status.running { 
+    color: #4ade80; 
+    animation: statusPulse 2s ease-in-out infinite;
+  }
+  
+  .status.paused { 
+    color: #fbbf24; 
+    animation: statusBlink 1s ease-in-out infinite;
+  }
+  
+  @keyframes statusPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .7; }
+  }
+  
+  @keyframes statusBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .5; }
+  }
+  
+  /* ----------  ENHANCED BUTTONS  ---------- */
+  .buttons{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:18px;
+    margin-top: 15px;
+  }
+  
+  button{
+    padding: 14px 32px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    border-radius: 35px;
+    letter-spacing: 1px;
+    transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+    background: var(--glass);
+    border: 2px solid rgba(255,255,255,.25);
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    user-select: none;
+    z-index: 1;
+  }
+  
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
+    transition: left .6s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
+  }
+  
+  button:hover::before {
+    left: 100%;
+  }
+  
+  button:hover{
+    transform: translateY(-5px) scale(1.08);
+    box-shadow: 0 12px 35px rgba(0,234,255,.4);
+    background: var(--glass-hover);
+    border-color: rgba(255,255,255,.4);
+  }
+  
+  button:active {
+    transform: translateY(-3px) scale(1.05);
+    transition: all .1s ease;
+  }
+  
+  .start{
+    color: #4ade80;
+    border-color: rgba(74,222,128,.4);
+  }
+  .start:hover{
+    box-shadow: 0 12px 35px rgba(74,222,128,.5);
+    border-color: rgba(74,222,128,.7);
+  }
+  
+  .pause{
+    color: #fbbf24;
+    border-color: rgba(251,191,36,.4);
+  }
+  .pause:hover{
+    box-shadow: 0 12px 35px rgba(251,191,36,.5);
+    border-color: rgba(251,191,36,.7);
+  }
+  
+  .reset{
+    color: #ef4444;
+    border-color: rgba(239,68,68,.4);
+  }
+  .reset:hover{
+    box-shadow: 0 12px 35px rgba(239,68,68,.5);
+    border-color: rgba(239,68,68,.7);
+  }
+  
+  .lap{
+    color: #06b6d4;
+    border-color: rgba(6,182,212,.4);
+  }
+  .lap:hover{
+    box-shadow: 0 12px 35px rgba(6,182,212,.5);
+    border-color: rgba(6,182,212,.7);
+  }
+  
+  button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+  }
+  
+  /* ----------  ENHANCED LAPS PANEL  ---------- */
+  .laps{
+    width: 320px;
+    max-height: 500px;
+    padding: 25px;
+    background: var(--dark-glass);
+    border-radius: 25px;
+    overflow-y: auto;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 40px rgba(0,0,0,.6);
+    border: 2px solid rgba(255,255,255,.1);
+    transition: all .3s ease;
+    position: relative;
+  }
+  
+  .laps:hover {
+    background: rgba(0,0,0,.4);
+    border-color: rgba(255,255,255,.15);
+    transform: translateY(-2px);
+    box-shadow: 0 25px 50px rgba(0,0,0,.7);
+  }
+  
+  .laps h2{
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(0,234,255,.6);
+    letter-spacing: 1px;
+  }
+  
+  .lap-item {
+    background: rgba(255,255,255,.08);
+    border-radius: 15px;
+    padding: 15px 18px;
+    margin: 10px 0;
+    border-left: 4px solid var(--accent);
+    transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .lap-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
+    transition: left .5s ease;
+  }
+  
+  .lap-item:hover::before {
+    left: 100%;
+  }
+  
+  .lap-item:hover {
+    background: rgba(255,255,255,.12);
+    transform: translateX(8px) scale(1.02);
+    box-shadow: 0 5px 20px rgba(0,234,255,.2);
+  }
+  
+  .lap-number {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 16px;
+  }
+  
+  .lap-time {
+    font-family: 'Courier New', 'Monaco', monospace;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  
+  .lap-split {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-top: 5px;
+    font-weight: 500;
+  }
+  
+  .best-lap {
+    border-left-color: #4ade80;
+    animation: bestLapGlow 3s ease-in-out infinite;
+  }
+  
+  .best-lap .lap-number {
+    color: #4ade80;
+  }
+  
+  @keyframes bestLapGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(74,222,128,.2); }
+    50% { box-shadow: 0 0 20px rgba(74,222,128,.4); }
+  }
+  
+  .worst-lap {
+    border-left-color: #ef4444;
+    animation: worstLapGlow 3s ease-in-out infinite;
+  }
+  
+  .worst-lap .lap-number {
+    color: #ef4444;
+  }
+  
+  @keyframes worstLapGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(239,68,68,.2); }
+    50% { box-shadow: 0 0 20px rgba(239,68,68,.4); }
+  }
+  
+  .no-laps{
+    font-style: italic;
+    color: #777;
+    text-align: center;
+    margin-top: 50px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  /* Enhanced scrollbar */
+  .laps::-webkit-scrollbar{
+    width: 10px;
+  }
+  
+  .laps::-webkit-scrollbar-track {
+    background: rgba(255,255,255,.1);
+    border-radius: 6px;
+  }
+  
+  .laps::-webkit-scrollbar-thumb{
+    background: linear-gradient(45deg, var(--accent), var(--accent-secondary));
+    border-radius: 6px;
+    transition: all .3s ease;
+  }
+  
+  .laps::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, rgba(0,234,255,.9), rgba(255,107,107,.9));
+  }
+  
+  /* Enhanced stats section */
+  .stats {
+    margin-top: 25px;
+    padding: 20px;
+    background: linear-gradient(145deg, rgba(0,234,255,.1), rgba(255,107,107,.05));
+    border-radius: 15px;
+    border: 2px solid rgba(0,234,255,.2);
+    backdrop-filter: blur(10px);
+  }
+  
+  .stats h3 {
+    color: var(--accent);
+    font-size: 16px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 14px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  
+  .stat-item:last-child {
+    border-bottom: none;
+  }
+  
+  .stat-label {
+    color: #bbb;
+    font-weight: 600;
+  }
+  
+  .stat-value {
+    font-family: 'Courier New', 'Monaco', monospace;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  
+  /* ----------  ENHANCED SHORTCUTS  ---------- */
+  .shortcuts {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: var(--dark-glass);
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #888;
+    max-width: 220px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.1);
+    transition: all .3s ease;
+    z-index: 20;
+  }
+  
+  .shortcuts:hover {
+    background: rgba(0,0,0,.5);
+    border-color: rgba(255,255,255,.2);
+  }
+  
+  .shortcuts h4 {
+    color: var(--accent);
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  
+  .shortcut-item {
+    margin: 5px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .key {
+    background: rgba(255,255,255,.15);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 11px;
+    min-width: 24px;
+    text-align: center;
+  }
+  
+  /* ----------  RESPONSIVE  ---------- */
+  @media(max-width:768px){
+    :root { --dial-size: 340px; }
+    h1 { font-size: 42px; }
+    .display { font-size: 2.6rem; }
+    .buttons { gap: 12px; }
+    button { padding: 12px 24px; font-size: 15px; }
+    .watch-container { flex-direction: column; gap: 30px; }
+    .laps { width: 300px; max-height: 300px; }
+    .shortcuts { bottom: 15px; right: 15px; }
+  }
+  
+  @media(max-width:480px){
+    :root { --dial-size: 300px; }
+    h1 { font-size: 34px; }
+    .display { font-size: 2.2rem; }
+    button { padding: 10px 18px; font-size: 14px; }
+    .laps { width: 280px; padding: 20px; }
+  }
+  
+  /* ----------  SPECIAL EFFECTS  ---------- */
+  .celebrate {
+    animation: celebrate 1s ease-in-out;
+  }
+  
+  @keyframes celebrate {
+    0%, 100% { transform: scale(1); }
+    25% { transform: scale(1.1) rotate(5deg); }
+    75% { transform: scale(1.1) rotate(-5deg); }
+  }
+  
+  .milestone {
+    animation: milestone 2s ease-in-out;
+  }
+  
+  @keyframes milestone {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,215,0,.5); }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>⏱ Galaxy Stopwatch Pro</h1>
+    <div class="watch-container">
+      <div class="watch">
+        <div class="dial">
+          <div class="display" id="time">00:00:00.00</div>
+          <div class="status" id="status">Ready</div>
+          <div class="buttons">
+            <button class="start" id="startBtn">Start</button>
+            <button class="pause" id="pauseBtn" disabled>Pause</button>
+            <button class="reset" id="resetBtn">Reset</button>
+            <button class="lap" id="lapBtn" disabled>Lap</button>
+          </div>
+        </div>
+      </div>
+      <div class="laps" id="laps">
+        <h2> Lap Times</h2>
+        <p class="no-laps">No laps recorded yet.<br>Start timing to record laps!</p>
+        <div class="stats" id="stats" style="display:none;">
+          <h3>Statistics</h3>
+          <div class="stat-item"><span class="stat-label">Total Laps:</span><span class="stat-value" id="totalLaps">0</span></div>
+          <div class="stat-item"><span class="stat-label">Best Lap:</span><span class="stat-value" id="bestLap">--:--:--</span></div>
+          <div class="stat-item"><span class="stat-label">Worst Lap:</span><span class="stat-value" id="worstLap">--:--:--</span></div>
+          <div class="stat-item"><span class="stat-label">Average:</span><span class="stat-value" id="avgLap">--:--:--</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="shortcuts">
+    <h4>⌨️ Keyboard Shortcuts</h4>
+    <div class="shortcut-item"><span class="key">Space</span> Start/Pause</div>
+    <div class="shortcut-item"><span class="key">L</span> Lap</div>
+    <div class="shortcut-item"><span class="key">R</span> Reset</div>
+  </div>
+
+  <script>
+    // JavaScript functionality
+    let startTime = 0, elapsed = 0, timerInterval;
+    let lapTimes = [], lastLapTime = 0;
+    const timeEl = document.getElementById('time');
+    const statusEl = document.getElementById('status');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const lapBtn = document.getElementById('lapBtn');
+    const lapsEl = document.getElementById('laps');
+    const statsEl = document.getElementById('stats');
+    const totalLapsEl = document.getElementById('totalLaps');
+    const bestLapEl = document.getElementById('bestLap');
+    const worstLapEl = document.getElementById('worstLap');
+    const avgLapEl = document.getElementById('avgLap');
+
+    function formatTime(ms) {
+      const h = String(Math.floor(ms / 3600000)).padStart(2, '0');
+      const m = String(Math.floor((ms % 3600000) / 60000)).padStart(2, '0');
+      const s = String(Math.floor((ms % 60000) / 1000)).padStart(2, '0');
+      const hs = String(Math.floor((ms % 1000) / 10)).padStart(2, '0');
+      return `${h}:${m}:${s}.${hs}`;
+    }
+
+    function updateDisplay() {
+      const now = Date.now() - startTime + elapsed;
+      timeEl.textContent = formatTime(now);
+    }
+
+    function updateControls(isRunning) {
+      startBtn.disabled = isRunning;
+      pauseBtn.disabled = !isRunning;
+      lapBtn.disabled = !isRunning;
+      statusEl.textContent = isRunning ? 'Running' : (elapsed > 0 ? 'Paused' : 'Ready');
+      statusEl.className = isRunning ? 'status running' : (elapsed > 0 ? 'status paused' : 'status');
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInterval = setInterval(updateDisplay, 33);
+      updateControls(true);
+    }
+
+    function pauseTimer() {
+      clearInterval(timerInterval);
+      elapsed += Date.now() - startTime;
+      updateControls(false);
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      startTime = 0; elapsed = 0; lapTimes = []; lastLapTime = 0;
+      timeEl.textContent = '00:00:00.00';
+      lapsEl.querySelectorAll('.lap-item').forEach(e => e.remove());
+      lapsEl.querySelector('.no-laps').style.display = 'block';
+      statsEl.style.display = 'none';
+      updateControls(false);
+    }
+
+    function recordLap() {
+      const now = Date.now() - startTime + elapsed;
+      const lapTime = now - lastLapTime;
+      lastLapTime = now;
+      lapTimes.unshift(lapTime);
+      displayLap(lapTimes.length, lapTime);
+      updateStats();
+      lapsEl.querySelector('.no-laps').style.display = 'none';
+    }
+
+    function displayLap(number, ms) {
+      const div = document.createElement('div');
+      div.classList.add('lap-item');
+      div.innerHTML = `<div><span class="lap-number">Lap ${number}</span><div class="lap-split">${formatTime(ms)}</div></div><div class="lap-time">${formatTime(ms)}</div>`;
+      lapsEl.insertBefore(div, statsEl);
+    }
+
+    function updateStats() {
+      const best = Math.min(...lapTimes);
+      const worst = Math.max(...lapTimes);
+      const avg = lapTimes.reduce((a,b) => a+b,0)/lapTimes.length;
+      totalLapsEl.textContent = lapTimes.length;
+      bestLapEl.textContent = formatTime(best);
+      worstLapEl.textContent = formatTime(worst);
+      avgLapEl.textContent = formatTime(avg);
+      statsEl.style.display = 'block';
+    }
+
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseTimer);
+    resetBtn.addEventListener('click', resetTimer);
+    lapBtn.addEventListener('click', recordLap);
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (startBtn.disabled) pauseTimer(); else startTimer();
+      } else if (e.key.toLowerCase() === 'l') {
+        if (!lapBtn.disabled) recordLap();
+      } else if (e.key.toLowerCase() === 'r') {
+        resetTimer();
+      }
+    });
+  </script>
+</body>
+</html>
