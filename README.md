@@ -4,7 +4,7 @@ Stopwatch Web Application
 Stopwatch Web Application
 
 Project Overview
-This is a **fully responsive stopwatch web application** built as part of the **SkillCraft Technology Web Development Internship (Task 2)**. The stopwatch allows users to **start**, **pause**, **reset**, and **record lap times**, delivering a clean and intuitive user experience for measuring time intervals.
+This is a **fully responsive stopwatch web application**. The stopwatch allows users to **start**, **pause**, **reset**, and **record lap times**, delivering a clean and intuitive user experience for measuring time intervals.
 
 ---
 
